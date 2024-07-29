@@ -20,6 +20,7 @@ namespace ExcelScaleLib
         {
             g,
             dwt,
+            hh,
         }
 
         private MySerialPort mySerialPort = new MySerialPort();
@@ -47,6 +48,10 @@ namespace ExcelScaleLib
             if (enum_Unit_Type == enum_unit_type.dwt)
             {
                 Communication.UART_Command_set_unit_to_dwt(mySerialPort);
+            }
+            if (enum_Unit_Type == enum_unit_type.hh)
+            {
+                Communication.UART_Command_set_unit_to_hh(mySerialPort);
             }
             return Communication.UART_Command_get_weight(mySerialPort);
         }
@@ -97,7 +102,7 @@ namespace ExcelScaleLib
                     {
                         if (retry >= UART_RetryNum)
                         {
-                            Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
+                            if (ConsoleWrite) Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
                             flag_OK = false;
                             break;
                         }
@@ -167,7 +172,7 @@ namespace ExcelScaleLib
                     {
                         if (retry >= UART_RetryNum)
                         {
-                            Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
+                            if (ConsoleWrite) Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
                             flag_OK = false;
                             break;
                         }
@@ -230,7 +235,7 @@ namespace ExcelScaleLib
                     {
                         if (retry >= UART_RetryNum)
                         {
-                            Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
+                            if (ConsoleWrite) Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
                             flag_OK = false;
                             break;
                         }
@@ -293,7 +298,7 @@ namespace ExcelScaleLib
                     {
                         if (retry >= UART_RetryNum)
                         {
-                            Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
+                            if (ConsoleWrite) Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
                             flag_OK = false;
                             break;
                         }
@@ -356,7 +361,70 @@ namespace ExcelScaleLib
                     {
                         if (retry >= UART_RetryNum)
                         {
-                            Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
+                            if (ConsoleWrite) Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
+                            flag_OK = false;
+                            break;
+                        }
+                        MySerialPort.ClearReadByte();
+                        MySerialPort.WriteString(command);
+                        MyTimer_UART_TimeOut.TickStop();
+                        MyTimer_UART_TimeOut.StartTickTime(UART_TimeOut);
+                        cnt++;
+                    }
+                    if (cnt == 1)
+                    {
+                        if (retry >= UART_RetryNum)
+                        {
+                            flag_OK = false;
+                            break;
+                        }
+                        if (MyTimer_UART_TimeOut.IsTimeOut())
+                        {
+                            retry++;
+                            cnt = 0;
+                        }
+                        string result = MySerialPort.ReadString();
+
+                        if (result.StringIsEmpty() == false)
+                        {
+                            result = result.Replace("\0", "");
+                            result = result.Replace("\n", "");
+                            result = result.Replace("\r", "");
+
+                            if (ConsoleWrite) Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data sucessed! [{result}] , {myTimerBasic}\n");
+                            flag_OK = true;
+                            break;
+                        }
+
+                    }
+
+                    System.Threading.Thread.Sleep(0);
+                }
+            }
+            System.Threading.Thread.Sleep(UART_Delay);
+            return flag_OK;
+        }
+        static public bool UART_Command_set_unit_to_hh(MySerialPort MySerialPort)
+        {
+            bool flag_OK = false;
+
+            if (MySerialPort.SerialPortOpen())
+            {
+                MyTimerBasic myTimerBasic = new MyTimerBasic();
+                MyTimerBasic MyTimer_UART_TimeOut = new MyTimerBasic();
+                int retry = 0;
+                int cnt = 0;
+                MySerialPort.ClearReadByte();
+                string command = "UI\r\n";
+
+
+                while (true)
+                {
+                    if (cnt == 0)
+                    {
+                        if (retry >= UART_RetryNum)
+                        {
+                            if (ConsoleWrite) Console.Write($"[{MethodBase.GetCurrentMethod().Name}] Set data error! \n {command}");
                             flag_OK = false;
                             break;
                         }
